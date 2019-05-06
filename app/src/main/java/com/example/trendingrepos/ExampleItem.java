@@ -3,11 +3,11 @@ package com.example.trendingrepos;
 public class ExampleItem {
     private String mImageUrl;
     private String mOwnerName;
-    private int mStars;
+    private String mStars;
     private String mRepoDescription;
     private String mRepoName;
 
-    public ExampleItem(String imageUrl, String ownerName, int stars,String description,String repoName) {
+    public ExampleItem(String imageUrl, String ownerName, String stars,String description,String repoName) {
         mImageUrl = imageUrl;
         mOwnerName = ownerName;
         mStars = stars;
@@ -23,7 +23,7 @@ public class ExampleItem {
         return mOwnerName;
     }
 
-    public int getStarCount() {
+    public String getStarCount() {
         return mStars;
     }
 

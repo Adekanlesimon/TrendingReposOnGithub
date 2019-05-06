@@ -5,7 +5,6 @@ import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
-import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -18,16 +17,19 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.lang.Math;
+
+import java.text.DecimalFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
     private ExampleAdapter mExampleAdapter;
     private ArrayList<ExampleItem> mExampleList;
-    String url = "https://api.github.com/search/repositories?q=created:>2017-10-22&sort=stars&order=desc";
+    String url;
     int pageNumber=1;
-    int totalPreviousCount=0;
     boolean isLoading=false;
-    int totalItemCount=0;
+    LocalDate thirty_days_ago;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,26 +43,31 @@ public class MainActivity extends AppCompatActivity {
         mExampleAdapter = new ExampleAdapter(MainActivity.this, mExampleList);
         mRecyclerView.setAdapter(mExampleAdapter);
 
-        parseJSON();
+
+        thirty_days_ago = LocalDate.now().minusDays( 30 ); //get the date 30 day ago
+        url="https://api.github.com/search/repositories?q=created:>"+thirty_days_ago+"&sort=stars&order=desc";
+
+
+        parseJSON(); //parse JSON and display on CardView
+
         mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
-            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) { // Detect when the user scrolls
                 super.onScrolled(recyclerView, dx, dy);
 
-                if (dy>0){
-                    RecyclerView.LayoutManager firstManager=recyclerView.getLayoutManager();
-                    totalItemCount=firstManager.getItemCount();
-                    int totalVisibleChildCount=firstManager.getChildCount();
-                    View visibleChild = recyclerView.getChildAt(0);
-                    int positionOfFirstVisibleChild = recyclerView.getChildAdapterPosition(visibleChild);
-                    int last=positionOfFirstVisibleChild+totalVisibleChildCount;
-                    Toast.makeText(MainActivity.this,"page num"+pageNumber+" total item"+totalItemCount+"last"+last,Toast.LENGTH_LONG).show();
-                    if (positionOfFirstVisibleChild+totalVisibleChildCount==totalItemCount&&!isLoading){
+                if (dy>0){      //Detect if the user scrolls up
+                    RecyclerView.LayoutManager mLayoutManager=recyclerView.getLayoutManager();
+                    int totalVisibleChildCount=mLayoutManager.getChildCount();  //get number of visible repos on the screen
+
+                    View firstVisibleChild = recyclerView.getChildAt(0); // get first visible child on the screen
+                    int positionOfFirstVisibleChild = recyclerView.getChildAdapterPosition(firstVisibleChild);// get the position of first visible child on the screen
+
+                    //Call parseJSON from next URL if the last loaded item is already visible on the screen,
+                    if (positionOfFirstVisibleChild+totalVisibleChildCount==mExampleList.size()&&!isLoading){
                         pageNumber++;
                         isLoading=true;
-                        url="https://api.github.com/search/repositories?q=created:>2017-10-22&sort=stars&order=desc&page="+pageNumber;
+                        url="https://api.github.com/search/repositories?q=created:>"+thirty_days_ago+"&sort=stars&order=desc&page="+pageNumber;
                         parseJSON();
-                        totalPreviousCount=totalPreviousCount+totalItemCount;
                     }
                 }
             }
@@ -77,6 +84,7 @@ public class MainActivity extends AppCompatActivity {
                         try {
                             JSONArray jsonArray = response.getJSONArray("items");
                             for (int i = 0; i < jsonArray.length(); i++) {
+
                                 JSONObject items = jsonArray.getJSONObject(i);
 
                                 JSONObject owner=items.getJSONObject("owner");
@@ -85,12 +93,8 @@ public class MainActivity extends AppCompatActivity {
                                 int starCount = items.getInt("stargazers_count");
                                 String repoName = items.getString("name");
                                 String repoDescription = items.getString("description");
-                                if (pageNumber>1){
-                                    mExampleList.add(totalItemCount+i,new ExampleItem(imageUrl, ownerName, starCount,repoDescription,repoName));
-                                }
-                                else {
-                                    mExampleList.add(new ExampleItem(imageUrl, ownerName, starCount,repoDescription,repoName));
-                                }
+
+                                mExampleList.add(new ExampleItem(imageUrl, ownerName, formatAndAddSuffix(starCount),repoDescription,repoName));
                             }
                             mExampleAdapter.notifyDataSetChanged();
                             isLoading=false;
@@ -110,5 +114,12 @@ public class MainActivity extends AppCompatActivity {
         mRequestQueue.add(request);
     }
 
-
+        public String formatAndAddSuffix(int number) {
+          char abbrev[] = {' ', 'K', 'M', 'B', 'T'};
+          double orderIncludingInfinity = Math.floor(Math.log10(Math.abs(number)) / 3);
+          double order = Math.max(0, Math.min(orderIncludingInfinity, abbrev.length -1 ));
+          char suffix = abbrev[(int)order];
+          DecimalFormat df = new DecimalFormat("#.#");
+          return df.format(number / Math.pow(10, order * 3))+suffix;
+        }
 }

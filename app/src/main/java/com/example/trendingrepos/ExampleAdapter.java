@@ -36,12 +36,12 @@ public class ExampleAdapter extends RecyclerView.Adapter<ExampleAdapter.ExampleV
         String ownerName = currentItem.getOwnerName();
         String repoName = currentItem.getRepoName();
         String repoDescription = currentItem.getRepoDescription();
-        int starCount = currentItem.getStarCount();
+        String starCount = currentItem.getStarCount();
 
         holder.mRepoName.setText(repoName);
         holder.mRepoDescription.setText(repoDescription);
         holder.mRepoOwnerName.setText(ownerName);
-        holder.mStars.setText(String.valueOf(starCount));
+        holder.mStars.setText(starCount);
         Picasso.get().load(imageUrl).fit().centerInside().into(holder.mOwnerAvatar);
     }
 
