@@ -1,10 +1,14 @@
 package com.example.trendingrepos;
 import android.support.annotation.NonNull;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.ActionBarContainer;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
+import android.widget.Button;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -30,25 +34,26 @@ public class MainActivity extends AppCompatActivity {
     int pageNumber=1;
     boolean isLoading=false;
     LocalDate thirty_days_ago;
+    RecyclerView.LayoutManager mLayoutManager;
+    int positionOfFirstVisibleChild=-1;
+    RecyclerView mRecyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        RecyclerView mRecyclerView = findViewById(R.id.recycler_view);
+        mRecyclerView = findViewById(R.id.recycler_view);
         mRecyclerView.setHasFixedSize(true);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        mLayoutManager=mRecyclerView.getLayoutManager();
         mExampleList = new ArrayList<>();
         mExampleAdapter = new ExampleAdapter(MainActivity.this, mExampleList);
         mRecyclerView.setAdapter(mExampleAdapter);
-
-
-        thirty_days_ago = LocalDate.now().minusDays( 30 ); //get the date 30 day ago
+        //get the date 30 days ago
+        thirty_days_ago = LocalDate.now().minusDays( 30 );
         url="https://api.github.com/search/repositories?q=created:>"+thirty_days_ago+"&sort=stars&order=desc";
-
-
         parseJSON(); //parse JSON and display on CardView
+
 
         mRecyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -56,11 +61,11 @@ public class MainActivity extends AppCompatActivity {
                 super.onScrolled(recyclerView, dx, dy);
 
                 if (dy>0){      //Detect if the user scrolls up
-                    RecyclerView.LayoutManager mLayoutManager=recyclerView.getLayoutManager();
+                    mLayoutManager=recyclerView.getLayoutManager();
                     int totalVisibleChildCount=mLayoutManager.getChildCount();  //get number of visible repos on the screen
 
                     View firstVisibleChild = recyclerView.getChildAt(0); // get first visible child on the screen
-                    int positionOfFirstVisibleChild = recyclerView.getChildAdapterPosition(firstVisibleChild);// get the position of first visible child on the screen
+                    positionOfFirstVisibleChild = recyclerView.getChildAdapterPosition(firstVisibleChild);// get the position of first visible child on the screen
 
                     //Call parseJSON from next URL if the last loaded item is already visible on the screen,
                     if (positionOfFirstVisibleChild+totalVisibleChildCount==mExampleList.size()&&!isLoading){
@@ -110,10 +115,11 @@ public class MainActivity extends AppCompatActivity {
                 error.printStackTrace();
             }
         });
-
         mRequestQueue.add(request);
     }
 
+
+    //Method to format and add suffix to a number
         public String formatAndAddSuffix(int number) {
           char abbrev[] = {' ', 'K', 'M', 'B', 'T'};
           double orderIncludingInfinity = Math.floor(Math.log10(Math.abs(number)) / 3);
@@ -122,4 +128,6 @@ public class MainActivity extends AppCompatActivity {
           DecimalFormat df = new DecimalFormat("#.#");
           return df.format(number / Math.pow(10, order * 3))+suffix;
         }
+
+
 }
